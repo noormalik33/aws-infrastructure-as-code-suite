@@ -1,3 +1,3 @@
 variable "ami_id" {}
-variable "instance_type" { default = "t2.micro" }
+variable "instance_type" { default = "t3.micro" }
 variable "instance_name" {}
