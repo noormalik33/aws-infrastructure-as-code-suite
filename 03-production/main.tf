@@ -1,6 +1,22 @@
-# ---------------------------------------------------------
-# DIRECT DEPLOYMENT (No Modules)
-# ---------------------------------------------------------
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+  backend "s3" {
+    bucket         = "au-tf-state-noor-2025" 
+    key            = "prod/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "terraform-locks"
+    encrypt        = true
+  }
+}
+
+provider "aws" {
+  region = "us-east-1"
+}
 
 # 1. Get the latest Ubuntu Image
 data "aws_ami" "ubuntu" {
@@ -18,7 +34,7 @@ data "aws_ami" "ubuntu" {
   }
 }
 
-# 2. Create the Security Group directly
+# 2. Create Security Group
 resource "aws_security_group" "direct_sg" {
   name        = "allow_web_traffic_direct"
   description = "Allow SSH and HTTP"
@@ -45,13 +61,13 @@ resource "aws_security_group" "direct_sg" {
   }
 }
 
-# 3. Create the Server (Hardcoded t2.micro)
+# 3. Create Server (Hardcoded t2.micro)
 resource "aws_instance" "web_server_direct" {
   ami                    = data.aws_ami.ubuntu.id
   
-  # --- THE FIX IS HERE ---
-  instance_type          = "t2.micro"      
-  # -----------------------
+  # --- CRITICAL SETTING ---
+  instance_type          = "t2.micro" 
+  # ------------------------
   
   key_name               = "final-key"     
   vpc_security_group_ids = [aws_security_group.direct_sg.id]
@@ -74,7 +90,6 @@ resource "aws_instance" "web_server_direct" {
   }
 }
 
-# 4. Output the IP
 output "direct_ip" {
   value = aws_instance.web_server_direct.public_ip
 }
