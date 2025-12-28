@@ -1,4 +1,4 @@
-# variable "ami_id" {}  <-- DELETED or Commented out
+# variable "ami_id" {}  
 variable "instance_type" {}
 variable "key_name" {}
 variable "environment" {}

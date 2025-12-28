@@ -1,8 +1,8 @@
 module "web_server" {
   source = "./modules/web_server"
 
-  # ami_id = "..."       <-- REMOVE THIS LINE
-  instance_type = "t3.micro"
+  # ami_id = "..."     
+  instance_type = "t2.micro"
   key_name      = "final-key"
   environment   = "prod"
 }
