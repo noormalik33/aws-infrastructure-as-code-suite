@@ -1,25 +1,8 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-  }
-  # Keep your existing backend config (S3)
-  backend "s3" {
-    bucket         = "au-tf-state-noor-2025" 
-    key            = "prod/terraform.tfstate"
-    region         = "us-east-1"
-    dynamodb_table = "terraform-locks"
-    encrypt        = true
-  }
-}
+# ---------------------------------------------------------
+# DIRECT DEPLOYMENT (No Modules)
+# ---------------------------------------------------------
 
-provider "aws" {
-  region = "us-east-1"
-}
-
-# --- 1. Find the latest Ubuntu Image ---
+# 1. Get the latest Ubuntu Image
 data "aws_ami" "ubuntu" {
   most_recent = true
   owners      = ["099720109477"] # Canonical
@@ -35,9 +18,9 @@ data "aws_ami" "ubuntu" {
   }
 }
 
-# --- 2. Create Security Group ---
-resource "aws_security_group" "web_sg" {
-  name        = "allow_web_traffic_unique"
+# 2. Create the Security Group directly
+resource "aws_security_group" "direct_sg" {
+  name        = "allow_web_traffic_direct"
   description = "Allow SSH and HTTP"
 
   ingress {
@@ -62,12 +45,16 @@ resource "aws_security_group" "web_sg" {
   }
 }
 
-# --- 3. Create the Server (Hardcoded t2.micro) ---
+# 3. Create the Server (Hardcoded t2.micro)
 resource "aws_instance" "web_server_direct" {
   ami                    = data.aws_ami.ubuntu.id
-  instance_type          = "t2.micro"      # <--- DIRECTLY SET HERE
-  key_name               = "final-key"     # <--- Ensure this key exists in AWS
-  vpc_security_group_ids = [aws_security_group.web_sg.id]
+  
+  # --- THE FIX IS HERE ---
+  instance_type          = "t2.micro"      
+  # -----------------------
+  
+  key_name               = "final-key"     
+  vpc_security_group_ids = [aws_security_group.direct_sg.id]
 
   user_data = <<-EOF
               #!/bin/bash
@@ -81,4 +68,13 @@ resource "aws_instance" "web_server_direct" {
   tags = {
     Name = "Direct-Web-Server"
   }
+  
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# 4. Output the IP
+output "direct_ip" {
+  value = aws_instance.web_server_direct.public_ip
 }
